@@ -1,0 +1,31 @@
+{
+  "name": "autoforms-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sayantann7/autoforms-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sayantann7/autoforms-backend/issues"
+  },
+  "homepage": "https://github.com/sayantann7/autoforms-backend#readme",
+  "description": "",
+  "dependencies": {
+    "@types/express": "^5.0.2",
+    "autoforms-backend": "file:",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.18"
+  }
+}
