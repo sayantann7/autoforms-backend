@@ -9,7 +9,7 @@ app.use(express.json());
 const PORT = 3000;
 
 const FORM_CREATION_API_URL = process.env.FORM_CREATION_API_URL;
-const FORM_CREATION_API_KEY = process.env.FORM_CREATION_API_URL;
+const FORM_FILLER_API_KEY = process.env.FORM_FILLER_API_KEY;
 const FORM_ANALYZER_API_URL = process.env.FORM_ANALYZER_API_URL;
 
 app.get("/", (req, res) => {
