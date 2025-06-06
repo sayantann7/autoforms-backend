@@ -41,6 +41,27 @@ app.post("/create-form", async (req, res) => {
     }
 
     const result = await response.json();
+
+    const content = result.content;
+
+    if(content.includes("Thank you for using AutoForms!")) {
+      // @ts-ignore
+      const resp = await fetch(FORM_ANALYZER_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          type : "form-creation",
+          query : messages[messages.length - 2].content
+        }),
+      });
+      const resObj = await resp.json();
+      const finalObj = parseJsonObj(resObj);
+      return res.status(200).json({
+        status: "Form created successfully",
+        result : finalObj,
+        message : result
+      });
+    }
+
     res.status(201).json(result);
   } catch (error) {
     console.error("Error creating form:", error);
@@ -71,6 +92,27 @@ app.post("/fill-form", async (req, res) => {
     }
 
     const result = await response.json();
+
+    const content = result.content;
+
+    if(content.includes("Thank you for using AutoForms!")) {
+      // @ts-ignore
+      const resp = await fetch(FORM_ANALYZER_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          type : "form-filling",
+          query : messages[messages.length - 2].content
+        }),
+      });
+      const resObj = await resp.json();
+      const finalObj = parseJsonObj(resObj);
+      return res.status(200).json({
+        status: "Form created successfully",
+        result : finalObj,
+        message : result
+      });
+    }
+
     res.status(201).json(result);
   } catch (error) {
     console.error("Error filling form:", error);
