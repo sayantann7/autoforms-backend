@@ -17,10 +17,19 @@ model User {
 }
 
 model Form {
+  id          String       @id @default(cuid())
+  title       String
+  fields      Json
+  author      User         @relation(fields: [authorId], references: [id])
+  authorId    String
+  createdAt   DateTime     @default(now())
+  submissions Submission[]
+}
+
+model Submission {
   id        String   @id @default(cuid())
-  title     String
-  content   String
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
+  form      Form     @relation(fields: [formId], references: [id])
+  formId    String
+  data      Json
   createdAt DateTime @default(now())
 }
