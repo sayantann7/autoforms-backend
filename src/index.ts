@@ -298,6 +298,37 @@ app.post("/fetch-forms", async (req, res) => {
 });
 
 // @ts-ignore
+app.post("/user-details", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).send("User ID is required");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        username: true,
+        fullname: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).send("Error fetching user details");
+  }
+});
+
+// @ts-ignore
 function parseJsonObj(input) {
   const start = input.indexOf('{');
   const end = input.lastIndexOf('}');
