@@ -12,6 +12,7 @@ model User {
   id           String   @id @default(cuid())
   username     String   @unique
   fullname     String?
+  password     String
   createdForms Form[]
   createdAt    DateTime @default(now())
 }
