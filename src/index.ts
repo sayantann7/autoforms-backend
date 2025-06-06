@@ -2,6 +2,7 @@ import express from "express";
 import { config } from "dotenv";
 config();
 import cors from "cors";
+import { PrismaClient } from "../src/generated/prisma";
 
 const app = express();
 app.use(cors());
@@ -12,15 +13,13 @@ const FORM_CREATION_API_URL = process.env.FORM_CREATION_API_URL;
 const FORM_FILLER_API_URL = process.env.FORM_FILLER_API_URL;
 const FORM_ANALYZER_API_URL = process.env.FORM_ANALYZER_API_URL;
 
-app.get("/", (req, res) => {
-  res.send("Hello, World!");
-});
+const prisma = new PrismaClient();
 
 // @ts-ignore
 app.post("/create-form", async (req, res) => {
   try {
 
-    const { messages } = req.body;
+    const { messages, userId } = req.body;
     if (!messages) {
       return res.status(400).send("Messages is required");
     }
@@ -55,10 +54,20 @@ app.post("/create-form", async (req, res) => {
       });
       const resObj = await resp.json();
       const finalObj = parseJsonObj(resObj);
+
+      const createdForm = await prisma.form.create({
+        data: {
+          title: finalObj.title,
+          authorId: userId,
+          fields: finalObj.fields
+        }
+      });
+
       return res.status(200).json({
         status: "Form created successfully",
         result : finalObj,
-        message : result
+        message : result,
+        createdForm : createdForm
       });
     }
 
@@ -73,7 +82,7 @@ app.post("/create-form", async (req, res) => {
 app.post("/fill-form", async (req, res) => {
   try {
 
-    const { messages, formFields } = req.body;
+    const { messages, formId } = req.body;
     if (!messages) {
       return res.status(400).send("Messages is required");
     }
@@ -81,6 +90,17 @@ app.post("/fill-form", async (req, res) => {
     if (!FORM_FILLER_API_URL) {
       return res.status(500).send("FORM_FILLER_API_URL is not defined in environment variables");
     }
+
+    const form = await prisma.form.findUnique({
+      where: {
+        id: formId,
+      },
+      select: {
+        fields: true,
+      },
+    });
+
+    const formFields = form?.fields;
 
     const response = await fetch(FORM_FILLER_API_URL, {
       method: "POST",
@@ -106,10 +126,19 @@ app.post("/fill-form", async (req, res) => {
       });
       const resObj = await resp.json();
       const finalObj = parseJsonObj(resObj);
+
+      const filledForm = await prisma.submission.create({
+        data: {
+          formId: formId,
+          data: finalObj
+        }
+      });
+
       return res.status(200).json({
         status: "Form created successfully",
         result : finalObj,
-        message : result
+        message : result,
+        filledForm : filledForm
       });
     }
 
@@ -149,6 +178,59 @@ app.post("/analyze-form", async (req, res) => {
     console.error("Error analyzing form:", error);
   }
   res.status(500).send("Error analyzing form");
+});
+
+// @ts-ignore
+app.post("/fetch-submissions", async (req, res) => {
+  try {
+    const { formId } = req.body;
+    if (!formId) {
+      return res.status(400).send("Form ID is required");
+    }
+
+    const submissions = await prisma.submission.findMany({
+      where: {
+        formId: formId,
+      },
+      select: {
+        id: true,
+        data: true,
+        createdAt: true,
+      },
+    });
+
+    res.status(200).json(submissions);
+  } catch (error) {
+    console.error("Error fetching submissions:", error);
+    res.status(500).send("Error fetching submissions");
+  }
+});
+
+// @ts-ignore
+app.post("/fetch-forms", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).send("User ID is required");
+    }
+
+    const forms = await prisma.form.findMany({
+      where: {
+        authorId: userId,
+      },
+      select: {
+        id: true,
+        title: true,
+        fields: true,
+        createdAt: true,
+      },
+    });
+
+    res.status(200).json(forms);
+  } catch (error) {
+    console.error("Error fetching forms:", error);
+    res.status(500).send("Error fetching forms");
+  }
 });
 
 // @ts-ignore
