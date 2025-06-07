@@ -13,6 +13,7 @@ const PORT = 3000;
 const FORM_CREATION_API_URL = process.env.FORM_CREATION_API_URL;
 const FORM_FILLER_API_URL = process.env.FORM_FILLER_API_URL;
 const FORM_ANALYZER_API_URL = process.env.FORM_ANALYZER_API_URL;
+const FORM_EDITING_API_URL = process.env.FORM_EDITING_API_URL;
 
 const prisma = new PrismaClient();
 
@@ -143,6 +144,80 @@ app.post("/create-form", async (req, res) => {
 });
 
 // @ts-ignore
+app.post("/edit-form", async (req, res) => {
+  try {
+
+    const { messages, formId } = req.body;
+    if (!messages) {
+      return res.status(400).send("Messages is required");
+    }
+
+    if (!FORM_EDITING_API_URL) {
+      return res.status(500).send("FORM_EDITING_API_URL is not defined in environment variables");
+    }
+
+    const form = await prisma.form.findUnique({
+      where: {
+        id: formId,
+      },
+      select: {
+        fields: true,
+      },
+    });
+
+    const response = await fetch(FORM_EDITING_API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        messages: messages,
+        formFields: form?.fields
+      }),
+    });
+
+    if (!response) {
+      throw new Error(`Error creating form`);
+    }
+
+    const result = await response.json();
+
+    const content = result.content;
+
+    if(content.includes("Thank you for using AutoForms!")) {
+      // @ts-ignore
+      const resp = await fetch(FORM_ANALYZER_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          type : "form-creation",
+          query : content
+        }),
+      });
+      const resObj = await resp.json();
+      const finalObj = parseJsonObj(resObj);
+
+      const updatedForm = await prisma.form.update({
+        where: {
+          id: formId,
+        },
+        data: {
+          fields: finalObj.fields
+        }
+      });
+
+      return res.status(200).json({
+        status: "Form updated successfully",
+        result : finalObj,
+        message : result,
+        updatedForm : updatedForm
+      });
+    }
+
+    res.status(201).json(result);
+  } catch (error) {
+    console.error("Error updating form:", error);
+  }
+  res.status(500).send("Error updating form");
+});
+
+// @ts-ignore
 app.post("/fill-form", async (req, res) => {
   try {
 
@@ -199,7 +274,7 @@ app.post("/fill-form", async (req, res) => {
       });
 
       return res.status(200).json({
-        status: "Form created successfully",
+        status: "Form filled successfully",
         result : finalObj,
         message : result,
         filledForm : filledForm
@@ -294,6 +369,27 @@ app.post("/fetch-forms", async (req, res) => {
   } catch (error) {
     console.error("Error fetching forms:", error);
     res.status(500).send("Error fetching forms");
+  }
+});
+
+// @ts-ignore
+app.post("/delete-form", async (req, res) => {
+  try {
+    const { formId } = req.body;
+    if (!formId) {
+      return res.status(400).send("Form ID is required");
+    }
+
+    const deletedForm = await prisma.form.delete({
+      where: {
+        id: formId,
+      },
+    });
+
+    res.status(200).json(deletedForm);
+  } catch (error) {
+    console.error("Error deleting form:", error);
+    res.status(500).send("Error deleting form");
   }
 });
 
