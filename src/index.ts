@@ -134,6 +134,9 @@ app.post("/create-form", async (req, res) => {
         }),
       });
       const resObj = await resp.json();
+
+      console.log("Response Object:", resObj);
+
       const finalObj = parseJsonObj(resObj);
 
       console.log("Final Object:", finalObj);
