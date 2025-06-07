@@ -136,6 +136,8 @@ app.post("/create-form", async (req, res) => {
       const resObj = await resp.json();
       const finalObj = parseJsonObj(resObj);
 
+      console.log("Final Object:", finalObj);
+
       const createdForm = await prisma.form.create({
         data: {
           title: finalObj.title,
