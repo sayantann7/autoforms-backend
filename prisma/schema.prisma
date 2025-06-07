@@ -20,7 +20,7 @@ model User {
 model Form {
   id          String       @id @default(cuid())
   title       String
-  fields      String
+  fields      Json
   author      User         @relation(fields: [authorId], references: [id])
   authorId    String
   createdAt   DateTime     @default(now())

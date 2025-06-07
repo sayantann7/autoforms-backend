@@ -485,14 +485,16 @@ app.post("/form", async (req, res) => {
 
 // @ts-ignore
 function parseJsonObj(input) {
+  // Remove markdown code fencing like ```json or ``` if present
+  const cleanedInput = input
+    .replace(/^```json\s*/i, '')  // remove starting fence
+    .replace(/```$/i, '')         // remove ending fence
+    .trim();
+
   try {
-    if (typeof input === "string") {
-      return JSON.parse(input);
-    }
-    return input;
-  } catch (error) {
-    console.error("Error parsing JSON:", error);
-    return input;
+    return JSON.parse(cleanedInput);
+  } catch (err) {
+    throw new Error('Invalid JSON: ' + err);
   }
 }
 
