@@ -22,7 +22,7 @@ const hashSalt = 10;
 // @ts-ignore
 app.post("/signup", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, fullname, password } = req.body;
     if (!username || !password) {
       return res.status(400).send("Username and password are required");
     }
@@ -40,6 +40,7 @@ app.post("/signup", async (req, res) => {
     const user = await prisma.user.create({
       data: {
         username,
+        fullname,
         password : hashedPassword
       },
     });
@@ -361,6 +362,12 @@ app.post("/fetch-forms", async (req, res) => {
         id: true,
         title: true,
         fields: true,
+        submissions: {
+          select: {
+            id: true,
+            data: true,
+          }
+        },
         createdAt: true,
       },
     });
@@ -421,6 +428,37 @@ app.post("/user-details", async (req, res) => {
   } catch (error) {
     console.error("Error fetching user details:", error);
     res.status(500).send("Error fetching user details");
+  }
+});
+
+// @ts-ignore
+app.post("/form", async (req, res) => {
+  try {
+    const { formId } = req.body;
+    if (!formId) {
+      return res.status(400).send("Form ID is required");
+    }
+
+    const form = await prisma.form.findUnique({
+      where: {
+        id: formId,
+      },
+      select: {
+        id: true,
+        title: true,
+        fields: true,
+        createdAt: true,
+      },
+    });
+
+    if (!form) {
+      return res.status(404).send("Form not found");
+    }
+
+    res.status(200).json(form);
+  } catch (error) {
+    console.error("Error fetching form:", error);
+    res.status(500).send("Error fetching form");
   }
 });
 
