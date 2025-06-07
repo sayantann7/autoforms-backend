@@ -5,17 +5,32 @@ import cors from "cors";
 import { PrismaClient } from "../src/generated/prisma";
 import bcrpyt from "bcrypt";
 
+declare global {
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
-const PORT = 3000;
 
 const FORM_CREATION_API_URL = process.env.FORM_CREATION_API_URL;
 const FORM_FILLER_API_URL = process.env.FORM_FILLER_API_URL;
 const FORM_ANALYZER_API_URL = process.env.FORM_ANALYZER_API_URL;
 const FORM_EDITING_API_URL = process.env.FORM_EDITING_API_URL;
 
-const prisma = new PrismaClient();
+// Updated Prisma client instantiation for serverless environment
+let prisma: PrismaClient;
+
+if (process.env.NODE_ENV === "production") {
+  prisma = new PrismaClient();
+} else {
+  // Prevent multiple instances during development/hot reloading
+  if (!global.prisma) {
+    global.prisma = new PrismaClient();
+  }
+  prisma = global.prisma;
+}
 
 const hashSalt = 10;
 
@@ -313,6 +328,7 @@ app.post("/analyze-form", async (req, res) => {
 
     const result = await response.json();
     const finalObj = parseJsonObj(result);
+
     res.status(201).json(finalObj);
   } catch (error) {
     console.error("Error analyzing form:", error);
@@ -464,16 +480,24 @@ app.post("/form", async (req, res) => {
 
 // @ts-ignore
 function parseJsonObj(input) {
-  const start = input.indexOf('{');
-  const end = input.lastIndexOf('}');
-  if (start === -1 || end === -1) {
-    throw new Error('No JSON object found in input string');
+  try {
+    if (typeof input === "string") {
+      return JSON.parse(input);
+    }
+    return input;
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return input;
   }
-
-  const jsonString = input.slice(start, end + 1);
-  return JSON.parse(jsonString);
 }
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Modified server startup for Vercel compatibility
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}
+
+// Export the Express app for Vercel
+export default app;

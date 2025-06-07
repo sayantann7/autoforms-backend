@@ -2,8 +2,13 @@
   "name": "autoforms-backend",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "dev": "tsc -b && node dist/index.js"
+  {
+    "scripts": {
+      "dev": "ts-node src/index.ts",
+      "build": "tsc",
+      "start": "node dist/index.js",
+      "postinstall": "prisma generate"
+    }
   },
   "repository": {
     "type": "git",
